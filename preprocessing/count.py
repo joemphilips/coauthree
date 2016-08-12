@@ -86,7 +86,7 @@ def _google_mapping(key, inputfile, cachefile="googlemapinfocache"):
                 lng = geocode_result[0]["geometry"]["location"]['lng']
                 _affilname_2_place[affil] = (place_id, str(lat), str(lng))
 
-            yield ",".join([l, ",".join(_affilname_2_place[affil])])
+            yield "|||".join([l, "|||".join(_affilname_2_place[affil])])
 
         # save to cache
     # with open(cachefile, "w") as fh:
@@ -158,7 +158,7 @@ def replace_country_name(Affiliationfile, key, table=None,
             country_symbols = [c.alpha2 for c in descripted_country]
             for c in country_symbols:
                 try:
-                    yield ",".join([l, c, ",".join(table[c])])
+                    yield "|||".join([l, c, "|||".join(table[c])])
                 except KeyError:
                     logger.info("no country info for {} ".format(c))
                     continue

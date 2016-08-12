@@ -40,8 +40,12 @@ def mapping(file1):
     country_to_capital = {}
     with open(file1, 'r') as f:
         for l in f:
+            # since some capitals or countries includes ", "
+            l = l.replace(', ', '. ')
+
             symbol, _, _, country_name, _, _, capital, lat, lon = \
                 l.split(",")[0:9]
+
             country_to_capital[symbol] = \
                 country_info(capital, lat, lon.strip())
 
@@ -111,7 +115,7 @@ def _header():
     ])
 
 
-def replace_country_name(Affiliationfile, key, table=None,
+def replace_country_name(Affiliationfile, key=None, table=None,
                          google=False, print_header=False):
     """
     Args:

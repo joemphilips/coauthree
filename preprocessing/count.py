@@ -12,7 +12,7 @@ formatter = logging.Formatter("%(asctime)s --- %(filename)s --- %(levelname)s --
 logger.setLevel(logging.DEBUG)
 
 stream_handler = logging.StreamHandler()
-stream_handler.setLevel(logging.DEBUG)
+stream_handler.setLevel(logging.ERROR)
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
@@ -102,7 +102,7 @@ def is_country_in_string(countryobj, string):
     """see if there is country name in string"""
     for names in [countryobj.name,
                   countryobj.alpha3]:
-        if re.search(" " + names + " ", string):
+        if re.search(" " + names + r"[,|\.|\s]", string):
             return True
     return False
 
@@ -210,7 +210,6 @@ if __name__ == '__main__':
                 key = keyfh.read()
             result = replace_country_name(inf, key=key, google=True)
 
-            print(result)
         with open(outfile, "w") as outfh:
             for r in result:
                 outfh.write(r + "\n")

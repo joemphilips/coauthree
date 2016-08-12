@@ -54,7 +54,9 @@ def _google_mapping(key, inputfile, cachefile="googlemapinfocache"):
         return value will be same as
     """
     gmaps = googlemaps.Client(key=key)
-    _affilname_2_place = weakref.WeakKeyDictionary()
+
+    # _affilname_2_place = weakref.WeakKeyDictionary()
+    _affilname_2_place = {}
 
     # read cache
     try:
@@ -72,13 +74,19 @@ def _google_mapping(key, inputfile, cachefile="googlemapinfocache"):
 
             if affil not in _affilname_2_place.keys():
                 geocode_result = gmaps.geocode(affil)
-                logger.debug("result of geocode was {}".format(geocode_result))
-                place_id = geocode_result["address_components"]["short_name"]
-                lat = geocode_result["geometry"]["location"]['lat']
-                lng = geocode_result["geometry"]["location"]['lng']
-                _affilname_2_place[affil] = (place_id, lat, lng)
 
-            yield ",".join([l, _affilname_2_place[affil]])
+                if not geocode_result:
+                    logger.error("there was no geocode_result for {} ".format(affil))
+                    continue
+                else:
+                    logger.debug("result of geocode was {}".format(geocode_result))
+
+                place_id = geocode_result[0]["address_components"][0]["short_name"]
+                lat = geocode_result[0]["geometry"]["location"]['lat']
+                lng = geocode_result[0]["geometry"]["location"]['lng']
+                _affilname_2_place[affil] = (place_id, str(lat), str(lng))
+
+            yield ",".join([l, ",".join(_affilname_2_place[affil])])
 
         # save to cache
     # with open(cachefile, "w") as fh:

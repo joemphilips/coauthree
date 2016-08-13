@@ -37,7 +37,7 @@ def mapping(file1):
             key (str): official country alpha2 symbol, e.g. JA for japan
             value (country_info): namedtuple of ``capital``, ``lat``, ``lon``
     """
-    country_to_capital = {}
+    country_to_info = {}
     with open(file1, 'r') as f:
         for l in f:
             # since some capitals or countries includes ", "
@@ -46,11 +46,11 @@ def mapping(file1):
             symbol, _, _, country_name, _, _, capital, lat, lon = \
                 l.split(",")[0:9]
 
-            country_to_capital[symbol] = \
+            country_to_info[symbol] = \
                 country_info(capital, lat, lon.strip())
 
-    logger.debug(country_to_capital)
-    return country_to_capital
+    logger.debug(country_to_info)
+    return country_to_info
 
 
 def _google_mapping(key, inputfile, cachefile="googlemapinfocache"):
@@ -98,6 +98,65 @@ def _google_mapping(key, inputfile, cachefile="googlemapinfocache"):
     #         cachefile.write(",".join([affil, info[0], info[1], info[2], "\n"])
 
 
+def _airport_mapping(filename, granularity="city"):
+    """get position inforation from airport table
+    Args:
+        file1: str file path for data downloaded from Amano-giken
+        granularity: if you want lat and long for the city in which
+            partidular airport exists. than this option should be `city`
+            otherwise, it should be `country`
+    Returns:
+        dict:
+            key (str): official country alpha2 symbol, e.g. JA for japan
+                or city name, depends on args
+            value (tuple): latitude and langitude.
+    """
+    if granularity not in ("city", "country"):
+        raise TypeError("arg `granularity` should be `city` or `country`")
+
+    if granularity == "country":
+        longname_to_alpha2 = {}
+        for country in pycountry.countries:
+                longname_to_alpha2[country.name.upper()] = country.alpha2
+
+    place_info = {}  # lat and lng for that place.
+    with open(filename) as fh:
+        for l in fh:
+            l = l.strip()
+
+            try:
+                city, country_name, lng1, lng2, lng3, _, lat1, lat2, lat3 = \
+                    l.split(":")[3:12]
+            except ValueError:
+                logger.exception("could not unpack {} ".format(l))
+                raise
+            try:
+                lng = float(lng1) + float(lng2)/60 + float(lng3)/3600
+            except TypeError:
+                logger.exception("could not {}:{}:{} convert to float".
+                                 format(lng1, lng2, lng3))
+                raise
+            lat = float(lat1) + float(lat2)/60 + float(lat3)/3600
+
+            if lng == 0.0 or lat == 0.0:
+                continue
+            if granularity == "country":
+                try:
+                    country_symbol = longname_to_alpha2[country_name]
+                except KeyError:
+                    continue
+                place_info[country_symbol] = (str(lat), str(lng))
+            if granularity == "city":
+                place_info[city] = (str(lat), str(lng))
+            else:
+                logger.exception("granularity {} is not good "
+                                 .format(granularity))
+                raise ValueError
+    logger.info("""length of countris which succeed to parse was {} """.
+                format(len(place_info)))
+    return place_info
+
+
 def is_country_in_string(countryobj, string):
     """see if there is country name in string"""
     for names in [countryobj.name,
@@ -136,7 +195,7 @@ def replace_country_name(Affiliationfile, key=None, table=None,
                      in list(pycountry.countries)]
 
     if google:
-        for g in  _google_mapping(key, Affiliationfile):
+        for g in _google_mapping(key, Affiliationfile):
             yield g
         return
 
@@ -168,6 +227,70 @@ def replace_country_name(Affiliationfile, key=None, table=None,
                     continue
 
 
+def _is_city_in_string(city, string):
+    if re.search("\s" + city.upper() + r"[\.|\s|,|]", string):
+        return True
+    return False
+
+
+def replace_city_name(Affiliationfile, possible_cities,
+                      table=None, print_header=False):
+    """
+    Args:
+        Affiliationfile (str): original input file path
+        possible_cities (list): string of cities you want to consider
+        table (dict): value returned by ``mapping``
+
+    Yields:
+        str: tab delimited info from Affiliationfile, e.g.
+            JA:US,Tokyo:lat:lon,Washington D.C.:lat:lon,
+    """
+    if print_header:
+        yield _header()
+
+    with open(Affiliationfile) as fh:
+        for i, l in enumerate(fh):
+
+            if i % 1000 == 1:
+                logger.info("finished parsing {} files".format(i))
+
+            l = l.strip()
+            affil = l.split("|||")[-1]
+            descripted_city = [c
+                               for c
+                               in possible_cities
+                               if _is_city_in_string(c, affil.upper())]
+
+            if len(descripted_city) > 1:
+                logger.debug("""there was more than 1 city in file {} line {}
+                            and that is {} !!
+                            """.format(Affiliationfile, i, affil))
+            elif not descripted_city:
+                logger.debug("""there was no city info in file {} line {}
+                            and that is {} !!
+                            """.format(Affiliationfile, i, affil))
+                continue
+
+            for c in descripted_city:
+                try:
+                    yield "|||".join([l, c, "|||".join(table[c])])
+                except KeyError:
+                    logger.info("no city info in table for {} ".format(c))
+                    logger.error("key of table was {} and \n\n\n "
+                                 "descripte city was {} "
+                                 .format(table.keys(), descripted_city))
+                    continue
+
+
+def get_possible_cities(filename):
+    cities = []
+    with open(filename, 'r') as fh:
+        for l in fh:
+            city = l.split(":")[3]
+            cities.append(city)
+    return cities
+
+
 if __name__ == '__main__':
     HERE = os.path.abspath(os.path.dirname(__file__))
     import argparse
@@ -181,10 +304,17 @@ if __name__ == '__main__':
     parser.add_argument("outpath", nargs=1,
                         help="output file path")
 
-    parser.add_argument("--google", "-g", nargs="?",
-                        type=bool,
-                        help="use googlemap api for getting "
-                             "lattitude and longitude")
+    parser.add_argument("--source", "-s", nargs="?",
+                        choices=["google", "airport", "asti"],
+                        type=str,
+                        help="""source from which you want to use for getting
+                                lattitude and longitude
+
+                                google: use google api, you need to specify API key
+                                    with --key option.
+                                airport: GlobalAirportDatabaseFile
+                                asti: downloaded from Amano-Giken
+                             """)
 
     parser.add_argument("--key", "-k", nargs="?",
                         type=str,
@@ -201,14 +331,24 @@ if __name__ == '__main__':
     for inf in args.inp:
         outfile = os.path.join(args.outpath[0], os.path.splitext(inf)[0] + ".csv")
         logger.info("going to output {} ".format(outfile))
-        if not args.google:
+
+        if args.source == "asti":
             mapping_table = mapping(os.path.join(HERE,
                                                  "asti-dath2706wc/h2706world_utf8.csv"))
             result = replace_country_name(inf, table=mapping_table)
-        else:
+        elif args.source == "google":
             with open(args.key) as keyfh:
                 key = keyfh.read()
             result = replace_country_name(inf, key=key, google=True)
+        elif args.source == "airport":
+            source_file = os.path.join(HERE, "../data/GlobalAirportDatabase",
+                                             "GlobalAirportDatabase.txt")
+            table = _airport_mapping(source_file)
+            possible_cities = get_possible_cities(source_file)
+            result = replace_city_name(inf, possible_cities, table=table)
+        else:
+            logger.error("please specify source of latitude and latitude with"
+                         "--source")
 
         with open(outfile, "w") as outfh:
             for r in result:

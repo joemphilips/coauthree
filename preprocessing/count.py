@@ -334,7 +334,7 @@ if __name__ == '__main__':
 
         if args.source == "asti":
             mapping_table = mapping(os.path.join(HERE,
-                                                 "asti-dath2706wc/h2706world_utf8.csv"))
+                                                 "../asti-dath2706wc/h2706world_utf8.csv"))
             result = replace_country_name(inf, table=mapping_table)
         elif args.source == "google":
             with open(args.key) as keyfh:

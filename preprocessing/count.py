@@ -6,7 +6,6 @@ import pycountry
 import coloredlogs
 import googlemaps
 import os
-import weakref
 logger = logging.getLogger(__name__)
 formatter = logging.Formatter("%(asctime)s --- %(filename)s --- %(levelname)s --- %(message)s")
 logger.setLevel(logging.DEBUG)
@@ -18,7 +17,7 @@ logger.addHandler(stream_handler)
 
 file_handler = logging.FileHandler(filename = 'log.txt')
 file_handler.setFormatter(formatter)
-file_handler.setLevel(logging.DEBUG)
+file_handler.setLevel(logging.INFO)
 logger.addHandler(file_handler)
 
 coloredlogs.install(level="ERROR")
@@ -192,7 +191,7 @@ def replace_country_name(Affiliationfile, key=None, table=None,
 
     all_countries = [l
                      for l
-                     in list(pycountry.countries)]
+                     in list(paycountry.countries)]
 
     if google:
         for g in _google_mapping(key, Affiliationfile):
@@ -228,18 +227,20 @@ def replace_country_name(Affiliationfile, key=None, table=None,
 
 
 def _is_city_in_string(city, string):
-    if re.search("\s" + city.upper() + r"[\.|\s|,|]", string):
+    if re.search(r"\s" + city.upper() + r"[\.|\s|,]", string):
         return True
     return False
 
 
+# @profile
 def replace_city_name(Affiliationfile, possible_cities,
-                      table=None, print_header=False):
+                      table, country_table, print_header=False):
     """
     Args:
         Affiliationfile (str): original input file path
         possible_cities (list): string of cities you want to consider
-        table (dict): value returned by ``mapping``
+        table (dict): value returned by ``_airport_mapping``
+        country_table (dict): value returned by ``mapping``
 
     Yields:
         str: tab delimited info from Affiliationfile, e.g.
@@ -255,11 +256,8 @@ def replace_city_name(Affiliationfile, possible_cities,
                 logger.info("finished parsing {} files".format(i))
 
             l = l.strip()
-            affil = l.split("|||")[-1]
-            descripted_city = [c
-                               for c
-                               in possible_cities
-                               if _is_city_in_string(c, affil.upper())]
+            affil = re.split(r'[,|\.|\s]', l.split("|||")[-1].upper())
+            descripted_city = {c for c in possible_cities if c in affil}
 
             if len(descripted_city) > 1:
                 logger.debug("""there was more than 1 city in file {} line {}
@@ -269,6 +267,10 @@ def replace_city_name(Affiliationfile, possible_cities,
                 logger.debug("""there was no city info in file {} line {}
                             and that is {} !!
                             """.format(Affiliationfile, i, affil))
+                possible_countries = get_possible_countries()
+                descripted_countries = {c for c in possible_countries if c in affil}
+                for coun in descripted_countries:
+                    yield "|||".join([l, coun, "|||".join(country_table[coun])])
                 continue
 
             for c in descripted_city:
@@ -276,7 +278,7 @@ def replace_city_name(Affiliationfile, possible_cities,
                     yield "|||".join([l, c, "|||".join(table[c])])
                 except KeyError:
                     logger.info("no city info in table for {} ".format(c))
-                    logger.error("key of table was {} and \n\n\n "
+                    logger.debug("key of table was {} and \n\n\n "
                                  "descripte city was {} "
                                  .format(table.keys(), descripted_city))
                     continue
@@ -289,6 +291,10 @@ def get_possible_cities(filename):
             city = l.split(":")[3]
             cities.append(city)
     return cities
+
+
+def get_possible_countries():
+    return set(c.name for c in pycountry.countries)
 
 
 if __name__ == '__main__':
@@ -333,9 +339,9 @@ if __name__ == '__main__':
         logger.info("going to output {} ".format(outfile))
 
         if args.source == "asti":
-            mapping_table = mapping(os.path.join(HERE,
+            country_mapping_table = mapping(os.path.join(HERE,
                                                  "../asti-dath2706wc/h2706world_utf8.csv"))
-            result = replace_country_name(inf, table=mapping_table)
+            result = replace_country_name(inf, table=country_mapping_table)
         elif args.source == "google":
             with open(args.key) as keyfh:
                 key = keyfh.read()
@@ -345,7 +351,10 @@ if __name__ == '__main__':
                                              "GlobalAirportDatabase.txt")
             table = _airport_mapping(source_file)
             possible_cities = get_possible_cities(source_file)
-            result = replace_city_name(inf, possible_cities, table=table)
+            country_mapping_table = mapping(os.path.join(HERE,
+                                                 "../asti-dath2706wc/h2706world_utf8.csv"))
+            result = replace_city_name(inf, possible_cities, table=table,
+                                       country_table=country_mapping_table)
         else:
             logger.error("please specify source of latitude and latitude with"
                          "--source")

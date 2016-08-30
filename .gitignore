@@ -5,3 +5,4 @@ log.txt
 *.swp
 *.pyc
 node_modules
+./data/raw_data.zip

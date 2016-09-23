@@ -1,2 +1,7 @@
 data/raw_data.zip
 log.txt
+*py.lprof
+log.txt
+*.swp
+*.pyc
+node_modules

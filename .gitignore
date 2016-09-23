@@ -1,0 +1,5 @@
+*py.lprof
+log.txt
+*.swp
+*.pyc
+node_modules

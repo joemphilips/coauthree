@@ -124,21 +124,27 @@ def _airport_mapping(filename, granularity="city"):
             l = l.strip()
 
             try:
-                city, country_name, lng1, lng2, lng3, _, lat1, lat2, lat3 = \
-                    l.split(":")[3:12]
+                city, country_name, lat1, lat2, lat3, NorS, lng1, lng2, lng3, EorW = \
+                    l.split(":")[3:13]
             except ValueError:
                 logger.exception("could not unpack {} ".format(l))
                 raise
             try:
+                lat = float(lat1) + float(lat2)/60 + float(lat3)/3600
                 lng = float(lng1) + float(lng2)/60 + float(lng3)/3600
             except TypeError:
                 logger.exception("could not {}:{}:{} convert to float".
                                  format(lng1, lng2, lng3))
                 raise
-            lat = float(lat1) + float(lat2)/60 + float(lat3)/3600
 
             if lng == 0.0 or lat == 0.0:
                 continue
+
+            if NorS == "S":
+                lat = -lat
+            if EorW == "W" or EorW == "U":
+                lng = -lng
+
             if granularity == "country":
                 try:
                     country_symbol = longname_to_alpha2[country_name]

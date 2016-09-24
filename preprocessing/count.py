@@ -1,5 +1,8 @@
 #!usr/bin/env python
 # -*- coding: utf-8 -*-
+"""script for generating latitude and longitude for each cities
+
+"""
 import re
 import logging
 import pycountry

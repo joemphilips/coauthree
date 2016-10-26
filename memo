@@ -1,0 +1,40 @@
+# armsglobeのメモ
+
+現時点での課題
+
+`js/dataloading.js`内のconsole.logで、`All_iPS.json`の中身をダンプしたところ、全てで`wc: none`になる。wcの内容をmilに更新しても同様。
+仮説
+
+1. `simplehttpserver`がキャッシュしている。
+2. 何処かで上書きしている。 -> 内容をdataloading内の内容をよく見ればわかるかも
+
+
+## メモ
+
+* country_code ... {"US": "UNITED STATES OF ..."}
+* weaponLookup ... `{'Military Weapons': 'mil'}`
+
+## Selection ... mainで定義
+
+* `selectedCountry`
+* `selectedYear`
+* `exportCategories[Military Weapons] = true`
+* `getImportCategories()` ... ["Military Weapons"]
+* `getExportCategories()` ... ["Military Weapons"]
+
+## `highlightCountry`
+
+1. `["United States of...", "Japan"]`を受けとる
+2. findcodeから`["US", "JA"]`を作成
+
+## `js/visualize.js`
+
+`buildDataVizGeometries`を定義これはtimebinsを受け取り,何も返していない。
+
+これはそれぞれの年の、それぞれのデータセットを`set`として定義し、それぞれのimporter exporterについて、`set.lineGeometry`に線のデータ？(makeConnectionLineGeometry)をセットしている
+
+## `js_visualize_line.js`
+
+`set.lineGeometry`
+ここでは`buildDataVizGeometries`によって分解された`timeBins`の中身を受け取り、`THREE.Curve.Utils.createLineGeometry`によって作られた、放物線オブジェクトを返す。
+

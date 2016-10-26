@@ -96,11 +96,16 @@ def extract_city(line):
 
 
 def timebins(filename):
-    """return dict for armsglobe compatible style"""
+    """return dict for armsglobe compatible style
+
+    Args:
+        filename: file path to data under `demo`
+    """
     count = coauthor_count(filename)
     return json.dumps({"timeBins":
         [
-            {"data": list(json_entries(count))}
+            {"data": list(json_entries(count)),
+             "t": "2010"}
         ]
      })
 
@@ -113,7 +118,7 @@ def json_entries(count):
 def json_entry(twocity, w):
     return {
         "i": twocity[0],
-        "wc": "none",
+        "wc": "mil",
         "e": twocity[1],
         "v": str(w)
     }
@@ -126,7 +131,7 @@ if __name__ == '__main__':
                 """)
     parser.add_argument("--version", action='version', version='1.0')
     parser.add_argument("infile",
-                        help="input files name")
+                        help="input file under demo/ ")
     args = parser.parse_args()
 
     print(timebins(args.infile))

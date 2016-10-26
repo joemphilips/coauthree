@@ -6,3 +6,4 @@ log.txt
 *.pyc
 node_modules
 ./data/raw_data.zip
+data

@@ -10,11 +10,13 @@
     <!-- Thrid Party js-->
     <script src="js/Three.js"></script>
     <script src="js/three.min.js"></script>
+    <script src="node_modules/jquery/dist/jquery.min.js"></script>
 
     <!-- own js -->
     <script src="js/coauthree.js"></script>
+
 	<body id="dataviz">
-        <div id="spa"></div>
-        <div>$(function () {coauthree.initModule( $('#spa') )});</div>
+        <script>coauthree.main( '#coauthree-container' );</script>
+        <div id="coauthree-container"></div>
 	</body>
 </html>

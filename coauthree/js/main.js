@@ -1,4 +1,10 @@
 function start( e ){
+    var mapIndexedImage;
+    mapIndexedImage.src = "/images/map_indexed.png";
+    mapIndexedImage.onload = init_scene();
+}
+
+function init_scene(){
     var scene = new THREE.Scene();
 
     // setup Camera
@@ -48,4 +54,4 @@ function start( e ){
     var earthMesh = new THREE.Mesh(geometry, material);
     scene.add(earthMesh);
     renderer.render( scene, camera );
-};
+}

@@ -1,5 +1,5 @@
 function start( e ){
-    var mapIndexedImage;
+    var mapIndexedImage ;
     mapIndexedImage.src = "/images/map_indexed.png";
     mapIndexedImage.onload = init_scene();
 }

@@ -8,6 +8,8 @@
 
 coauthree = (function () {
     var cityinfo = "/cities_lat_lon.json";
+    var mapIndexedImage = new Image();
+    var mapOutlineImage = new Image();
 
     var main = function ( $container ) {
         container = document.getElementById( $container );
@@ -15,14 +17,17 @@ coauthree = (function () {
         var xhr = new XMLHttpRequest();
         xhr.open( 'GET', cityinfo, true );
         console.log("finished reading");
-        _init_scene();
+	mapIndexedImage.src = "/images/map_indexed.png";
+	mapOutlineImage.src = "/images/map_outline.png"
+
+        mapIndexedImage.onload = _init_scene();
     };
 
     var _init_scene = function(){
 
         //	Let's make a scene
         scene = new THREE.Scene();
-        scene.matrixAutoUpdate = false;
+        // scene.matrixAutoUpdate = false;
         // scene.fog = new THREE.FogExp2( 0xBBBBBB, 0.00003 );
 
         scene.add( new THREE.AmbientLight( 0x505050 ) );
@@ -53,16 +58,15 @@ coauthree = (function () {
         lookupTexture.needsUpdate = true;
 
         var indexedMapTexture = new THREE.Texture( mapIndexedImage );
-        //THREE.ImageUtils.loadTexture( 'images/map_indexed.png' );
         indexedMapTexture.needsUpdate = true;
         indexedMapTexture.magFilter = THREE.NearestFilter;
         indexedMapTexture.minFilter = THREE.NearestFilter;
 
         var outlinedMapTexture = new THREE.Texture( mapOutlineImage );
         outlinedMapTexture.needsUpdate = true;
-        // outlinedMapTexture.magFilter = THREE.NearestFilter;
-        // outlinedMapTexture.minFilter = THREE.NearestFilter;
 
+
+/*
         var uniforms = {
             'mapIndex': { type: 't', value: 0, texture: indexedMapTexture  },
             'lookup': { type: 't', value: 1, texture: lookupTexture },
@@ -80,6 +84,7 @@ coauthree = (function () {
             // sizeAttenuation: true,
         });
 
+*/
 
         //	-----------------------------------------------------------------------------
         //	Create the backing (sphere)
@@ -95,10 +100,9 @@ coauthree = (function () {
                 // lightMap: 	mapGraphic
             }
         );
-        // backMat.ambient = new THREE.Color(255,255,255);
-        sphere = new THREE.Mesh( new THREE.SphereGeometry( 100, 40, 40 ), shaderMaterial );
-        // sphere.receiveShadow = true;
-        // sphere.castShadow = true;
+        sphere = new THREE.Mesh( new THREE.SphereGeometry( 100, 40, 40 )); // shaderMaterial );
+
+
         sphere.doubleSided = false;
         sphere.rotation.x = Math.PI;
         sphere.rotation.y = -Math.PI/2;
@@ -107,6 +111,7 @@ coauthree = (function () {
         rotating.add( sphere );
 
 
+	/*
         for( var i in timeBins ){
             var bin = timeBins[i].data;
             for( var s in bin ){
@@ -151,6 +156,8 @@ coauthree = (function () {
 
 
         //	-----------------------------------------------------------------------------
+*/
+
         //	Setup our renderer
         renderer = new THREE.WebGLRenderer({antialias:false});
         renderer.setSize( window.innerWidth, window.innerHeight );
@@ -159,8 +166,9 @@ coauthree = (function () {
         renderer.sortObjects = false;
         renderer.generateMipmaps = false;
 
-        glContainer.appendChild( renderer.domElement );
+        // glContainer.appendChild( renderer.domElement );
 
+/*
 
         //	-----------------------------------------------------------------------------
         //	Event listeners
@@ -183,6 +191,7 @@ coauthree = (function () {
 
         document.addEventListener( 'keydown', onKeyDown, false);
 
+	*/
         //	-----------------------------------------------------------------------------
         //	Setup our camera
         camera = new THREE.PerspectiveCamera( 12, window.innerWidth / window.innerHeight, 1, 20000 );
@@ -191,7 +200,10 @@ coauthree = (function () {
         camera.lookAt(scene.width/2, scene.height/2);
         scene.add( camera );
 
-        var windowResize = THREEx.WindowResize(renderer, camera)
+	document.body.appendChild( renderer.domElement );
+	renderer.render(scene, camera);
+
+        // var windowResize = THREE.WindowResize(renderer, camera)
     };
 
     return { main : main };

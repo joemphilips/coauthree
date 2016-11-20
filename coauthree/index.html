@@ -8,14 +8,14 @@
 
 	</head>
     <!-- Thrid Party js-->
-    <script src="js/Three.js"></script>
-    <script src="js/three.min.js"></script>
+    <script data-main="js/coauthree.js" src="js/require.js"></script>
     <script src="node_modules/jquery/dist/jquery.min.js"></script>
 
     <!-- own js -->
-    <script src="js/coauthree.js"></script>
+    <!-- <script src="js/coauthree.js"></script> -->
 
 	<body id="dataviz">
+        <script>console.log(coauthree.main);</script>
         <script>coauthree.main( '#coauthree-container' );</script>
         <div id="coauthree-container"></div>
 	</body>

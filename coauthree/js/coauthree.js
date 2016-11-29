@@ -9,4 +9,5 @@ require(["three.min", "util"], function(THREE, util){
 
     console.log("this is main !!");
     util.test("world!!");
+    util.init_scene();
 });
